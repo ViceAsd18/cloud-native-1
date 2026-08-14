@@ -1,0 +1,22 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: dsy1107-api-gateway-lab
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          routes:
+            - id: posts-v1
+              uri: https://jsonplaceholder.typicode.com
+              predicates:
+                - Path=/api/v1/posts/**
+              filters:
+                - RewritePath=/api/v1/(?<segment>.*), /$\{segment}
+
+lab:
+  cors:
+    enabled: false
+    allowed-origin: http://localhost:5500
