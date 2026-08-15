@@ -15,6 +15,18 @@ spring:
                 - Path=/api/v1/posts/**
               filters:
                 - RewritePath=/api/v1/(?<segment>.*), /$\{segment}
+                - AddResponseHeader=X-API-VERSION, v1
+                - AddResponseHeader=X-Gateway-Lab, DSY1107
+
+
+            - id: posts-v2
+              uri: https://jsonplaceholder.typicode.com
+              predicates:
+                - Path=/api/v2/posts/**
+              filters:
+                - RewritePath=/api/v2/(?<segment>.*), /$\{segment}
+                - AddResponseHeader=X-API-VERSION, v2
+                - AddResponseHeader=X-Gateway-Lab, DSY1107
 
 lab:
   cors:
