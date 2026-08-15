@@ -116,25 +116,28 @@ gateway.
 
 ## 5. Versionado
 
-- Evidencia `/api/v1`:
-- Header `X-API-Version` observado:
-- Evidencia `/api/v2`:
-- Header `X-API-Version` observado:
+- Evidencia `/api/v1`: GET http://localhost:8080/api/v1/posts/1 -> 200 OK
+- Header `X-API-Version` observado: v1
+- Evidencia `/api/v2`: GET http://localhost:8080/api/v2/posts/1 -> 200 OK
+- Header `X-API-Version` observado: v2
 
 Responder:
 
-1. ¿Por qué mantener v1 y v2 simultáneamente?
+1. ¿Por qué mantener v1 y v2 simultáneamente? 
+Para no romper los clientes que usan v1 y aun no migran hacian v2
 2. ¿Qué consumidores podrían seguir usando v1?
-3. ¿Cuándo retirarían una versión?
+apps que no necesiten el uso de las nuevas funciones de la v2
+3. ¿Cuándo retirarían una versión? 
+cuando ya no quede ningun cliente usandola, tras un periodo de aviso
 4. ¿Versionar el contrato público es lo mismo que versionar el servidor desplegado?
-
+No - en este laboratorio, v1 y v2 apunta al mismo backend. Solo cambia el "contrato" que ve el cliente (la URL y el header), no el backend
 ---
 
 ## 6. Header transversal
 
 - Header esperado: `X-Gateway-Lab: DSY1107`
-- Evidencia observada:
-- ¿Por qué este comportamiento puede considerarse transversal?:
+- Evidencia observada: aparece en las respuestas de /api/v1/posts/1 y /api/v2/posts/1
+- ¿Por qué este comportamiento puede considerarse transversal?: Porque no depende de la logica de negocio de una route especifica, sino que es una politica aplicada por el gateway a cualquier petición que pase por él, sin importar la version o el recurso.
 
 ---
 
