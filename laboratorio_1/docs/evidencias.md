@@ -11,12 +11,13 @@ Antes de utilizar el gateway, registrar las pruebas directas contra JSONPlacehol
 
 | Método | URL | Status | Observación |
 |---|---|---:|---|
-| GET | `https://jsonplaceholder.typicode.com/posts` | | |
-| GET | `https://jsonplaceholder.typicode.com/posts/1` | | |
+| GET | `https://jsonplaceholder.typicode.com/posts` | 200 | body normal |
+| GET | `https://jsonplaceholder.typicode.com/posts/1` | 200 | body normal |
 
 **¿Qué información del backend conoce el cliente en este escenario?**
 
-Respuesta:
+Respuesta: conoce directamente la dirección real del backend: el dominio completo https://jsonplaceholder.typicode.com
+y su estructura de rutas (/posts, /posts/1).
 
 ---
 
@@ -39,30 +40,60 @@ flowchart LR
 
 Explicar brevemente qué responsabilidad cumple cada componente.
 
+- **Cliente web (:5500)**: interfaz en el navegador usada específicamente para comprobar el 
+  comportamiento de CORS. Envía peticiones al gateway sin conocer la dirección real del backend.
+
+- **Postman**: cliente usado para probar todos los métodos HTTP (GET, POST, PUT, DELETE) 
+  directamente contra el gateway. A diferencia del navegador, no aplica la política CORS, 
+  por eso puede funcionar incluso antes de configurar CORS.
+
+- **Spring Cloud Gateway (:8080)**: punto de entrada único de la arquitectura. Recibe todas 
+  las peticiones (tanto de Postman como del cliente web), decide mediante predicates a qué 
+  ruta corresponden, transforma la URL con RewritePath, agrega headers transversales 
+  (X-Gateway-Lab, X-API-Version) y reenvía la petición al backend real. También es responsable 
+  de aplicar la política CORS antes de responder al navegador.
+
+- **JSONPlaceholder**: backend de prueba. Resuelve la lógica real (o simulada) de negocio: 
+  devuelve, crea, actualiza o elimina recursos. No tiene conocimiento de que existe un gateway 
+  delante — solo responde a las peticiones que le llegan, ya transformadas.
+
 ---
 
 ## 3. Pruebas HTTP mediante gateway
 
 | Método | URL | Status | Headers relevantes | Interpretación |
 |---|---|---:|---|---|
-| GET | `/api/v1/posts` | | | colección |
-| GET | `/api/v1/posts/1` | | | recurso individual |
-| POST | `/api/v1/posts` | | | creación simulada |
-| PUT | `/api/v1/posts/1` | | | actualización simulada |
-| DELETE | `/api/v1/posts/1` | | | eliminación simulada |
+| GET | `/api/v1/posts` | 200 | | colección |
+| GET | `/api/v1/posts/1` | 200 | | recurso individual |
+| POST | `/api/v1/posts` | 201 | | creación simulada |
+| PUT | `/api/v1/posts/1` | 200 | | actualización simulada |
+| DELETE | `/api/v1/posts/1` | 200 | | eliminación simulada |
 
 Para POST y PUT incluir también el body enviado.
+
+{
+  "title": "Cloud Native",
+  "body": "Laboratorio API Gateway",
+  "userId": 1
+}
+
+{
+  "id": 1,
+  "title": "Cloud Native actualizado",
+  "body": "Prueba PUT mediante gateway",
+  "userId": 1
+}
 
 ---
 
 ## 4. Routing
 
-- URL solicitada por el cliente:
-- `id` de la route:
-- predicate que hizo match:
-- URI/integration configurada:
-- path recibido finalmente por el backend:
-- función de `RewritePath`:
+- URL solicitada por el cliente: http://localhost:8080/api/v1/posts
+- `id` de la route: posts-v1
+- predicate que hizo match: Path=/api/v1/posts/**
+- URI/integration configurada: https://jsonplaceholder.typicode.com
+- path recibido finalmente por el backend: /posts
+- función de `RewritePath`: elimina el prefijo /api/v1 de la URL antes de reenviarla al backend, para que coincida con las rutas reales que expone JSONPlaceholder (que no usa ese prefijo)
 
 ### Recorrido de una petición
 
@@ -71,7 +102,16 @@ Explicar con sus palabras:
 ```text
 cliente → gateway → backend → gateway → cliente
 ```
-
+Cuando se manda la petición desde Postman a localhost:8080/api/v1/posts, yo como cliente
+no sé ni me importa dónde está realmente JSONPlaceholder. El gateway es el que recibe
+esa petición primero. Revisa sus routes configuradas y ve que /api/v1/posts/** hace
+match con el predicate de la route posts-v1. Antes de mandar la petición al backend,
+el filtro RewritePath le saca el /api/v1 a la URL, dejando solo /posts, porque esa es
+la ruta que realmente existe en JSONPlaceholder (ellos no tienen /api/v1, tienen /posts
+directamente). Con esa URL ya transformada, el gateway hace la petición real hacia
+https://jsonplaceholder.typicode.com/posts, recibe la respuesta del backend, y me la
+devuelve tal cual a mí. Yo nunca hablé directo con JSONPlaceholder, todo pasó por el
+gateway.
 ---
 
 ## 5. Versionado
