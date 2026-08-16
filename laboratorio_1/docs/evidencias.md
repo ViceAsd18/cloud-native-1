@@ -180,21 +180,23 @@ Cualquier sitio web, incluso uno malicioso, podria hacer peticiones al backend d
 ## 8. Richardson Maturity Model nivel 2
 
 Explicar qué elementos observados en el laboratorio permiten afirmar que la API utiliza recursos, métodos HTTP y status codes con semántica HTTP.
-
+Recursos identificados: cada url representa un recurso concreto, como /api/v1/posts (la coleccion completa) y /api/v1/posts/1 (un posts en especifico).
+Metodos HTTP: se probo GET (tanto la colección como un recurso individual), POST - PUT - DELETE. Cada metodo representa una operacion distinta sobr el mismo recurso
+Status codes con semántica: las respuestas no fueron todas 200 sin distinción. El GET devolvió 200 OK, el POST devolvió 201 Created, y el PUT devolvió 200 OK con el recurso actualizado. Esto demuestra que los status codes comunican el resultado real de la operación, no solo si hubo o no un error genérico.
 ---
 
 ## 9. Responsabilidades
 
 | Responsabilidad | Cliente | Gateway | Backend | Justificación |
 |---|:---:|:---:|:---:|---|
-| routing | | | | |
-| lógica de negocio | | | | |
-| autenticación/autorización | | | | |
-| transformación de rutas | | | | |
-| persistencia | | | | |
-| rate limiting | | | | |
-| reglas de negocio | | | | |
-| observabilidad | | | | |
+| routing | | X | | el gateway decide, segun el predicate (Path), a que backend reenviar cada peticion. El cliente solo conoce la URL del gateway, no sabe nada del routing |
+| lógica de negocio | | | X | Crear, actualizar o elimiar un post es logica del backend (JSONPlaceholder). el gateway no interpreta ni modifica el contenido del negocio solo reenvia |
+| autenticación/autorización | | X | X | En arquitecturas reales, el gateway suele ser el 1er punto donde se valida un token (autenticacion), y el backend puede aplicar reglas de autoriszacion mas finas segun el recurso. En este laboratorio no se implemento. |
+| transformación de rutas | | X | | RewritePath es responsabilidad exclusiva del gateway: transforma /api/v1/posts en /posts antes de reenviarla. |
+| persistencia | | | X | Guardar, modificar o borrar datos es responsabilidad del backend. El gateway no almacena nada, solo reenvia peticiones y respuestas |
+| rate limiting | | X | | Limitar cuantas peticiones puede hacer un cliente en un periodo de tiempo es una politica del gateway (no se implemento en este laboratorio) |
+| reglas de negocio | | | X | igual que la logica de negocio, las reglas especificas (ej. validar que un post tenga titulo antes de crearlo) corresponden al gateway |
+| observabilidad | | X | | es un punto centralizado ideal para logging, métricas y trazabilidad de todas las peticiones que pasan por el |
 
 ---
 
@@ -210,7 +212,9 @@ Explicar qué elementos observados en el laboratorio permiten afirmar que la API
 
 | Integrante | Rama | Pull Request | Aporte principal |
 |---|---|---|---|
-| | | | |
+| Vicente Ramírez | feature/version-v2 | https://github.com/ViceAsd18/cloud-native-1/pull/1 | Creacion de la route /api/v2, headers de version |
+| Vicente Ramírez | feature/cors | https://github.com/ViceAsd18/cloud-native-1/pull/2 | Configuracion de CORS, diagnostico |
+
 
 Agregar enlaces a los Pull Requests.
 
@@ -219,5 +223,8 @@ Agregar enlaces a los Pull Requests.
 ## 12. Conclusiones
 
 - ¿Qué problema resolvió el gateway?
+Antes, el cliente necesitaba conocer la direccion real de JSONPlaceholder; con el gateway, el cliente solo conoce localhost:8080, y es el gateway el que sabe a donde reenviar cada petición.
 - ¿Qué concepto del laboratorio sería equivalente al trabajar posteriormente con Amazon API Gateway?
+
 - ¿Qué aprendió el grupo que no depende específicamente de Spring Cloud Gateway?
+Que Cors es una restriccion exclusiva de navegadores (No de herramientas como Postman), que versionar API no siempre implicar tener sevidores distintos por version.
