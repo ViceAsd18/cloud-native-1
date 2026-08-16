@@ -124,13 +124,13 @@ gateway.
 Responder:
 
 1. ¿Por qué mantener v1 y v2 simultáneamente? 
-Para no romper los clientes que usan v1 y aun no migran hacian v2
+`Para no romper los clientes que usan v1 y aun no migran hacian v2`
 2. ¿Qué consumidores podrían seguir usando v1?
-apps que no necesiten el uso de las nuevas funciones de la v2
+`apps que no necesiten el uso de las nuevas funciones de la v2`
 3. ¿Cuándo retirarían una versión? 
-cuando ya no quede ningun cliente usandola, tras un periodo de aviso
+`cuando ya no quede ningun cliente usandola, tras un periodo de aviso`
 4. ¿Versionar el contrato público es lo mismo que versionar el servidor desplegado?
-No - en este laboratorio, v1 y v2 apunta al mismo backend. Solo cambia el "contrato" que ve el cliente (la URL y el header), no el backend
+`No - en este laboratorio, v1 y v2 apunta al mismo backend. Solo cambia el "contrato" que ve el cliente (la URL y el header), no el backend`
 ---
 
 ## 6. Header transversal
@@ -146,29 +146,35 @@ No - en este laboratorio, v1 y v2 apunta al mismo backend. Solo cambia el "contr
 ### Antes de configurar CORS
 
 - URL del cliente web: `http://localhost:5500`
-- Endpoint consultado:
-- Resultado visible:
-- Mensaje relevante en Console/Network:
+- Endpoint consultado: `http://localhost:8080/api/v1/posts/1`
+- Resultado visible: `la peticion funciona correctamente y se muestra el JSON del post en pantalla, a pesar de que lab.cors.enabled esta en false (el gateway no tiene CORS configurado todavia).`
+- Mensaje relevante en Console/Network: `no aparece ningun error de CORS en la consola. Al revisar Response Headers en network , se observa Access-Control-Allow-Origin con el mismo valor del Origin enviado por el navegador. Sin embargo este header no lo agrega el gateway propio (que aun no tiene CORS activo).`
 
 ### Después de configurar CORS
 
-- Resultado visible:
-- `Access-Control-Allow-Origin`:
-- `Access-Control-Allow-Methods`:
+- Resultado visible: la peticion desde el navegador fue bloqueada, a pesar de que con lab.cors.enabled : false la misma peticion si funcionaba.
+- `Access-Control-Allow-Origin`: aparecio duplicado en la respuesta, uno agregado por JSONPlaceholder y otro agregado por la configuracion CORS propia del gateway
+- `Access-Control-Allow-Methods`: no llegó a evaluarse en el navegador por que la respuesta ya esta bloqueada por el problema anterior.
 
 ### Preflight OPTIONS
 
-- Request utilizado:
-- Status:
-- Headers relevantes:
+- Request utilizado: OPTIONS http://localhost:8080/api/v1/posts, con headers
+- Status: 200 OK
+- Headers relevantes: Access-Control-Allow-Origin: http://localhost:5500, 
+  Access-Control-Allow-Methods: GET,POST,PUT,DELETE,OPTIONS, 
+  Access-Control-Max-Age: 1800
+
 
 Responder:
 
 1. ¿Por qué Postman puede funcionar cuando el navegador falla?
+Porque Postman no es un navegador y no implementa la Same-Origin Policy ni valida Headers de Cors
 2. ¿Qué es un preflight?
+Es una peticion OPTIONS que el navegador manda automaticamente antes de la peticion real, cuando esta no es "simple". El navegador le pregunta al servidor "¿me dejas hacxer esta peticion desde este origen?" antes de mandar la peticion de verdad, y solo si la respuesta del preflight lo autoriza, procede.
 3. ¿CORS autentica o autoriza usuarios?
+No tiene relacion con identidad de usuarios ni permisos de negocio. Solo controla que origenes tiene permitido que un navegador lea la respuesta de una peticion cross-origin
 4. ¿Qué riesgo tendría permitir cualquier origen sin analizar el contexto?
-
+Cualquier sitio web, incluso uno malicioso, podria hacer peticiones al backend desde el navegador de un usuario y leer las respuesta, lo que facilita robo de datos.
 ---
 
 ## 8. Richardson Maturity Model nivel 2
