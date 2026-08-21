@@ -1,0 +1,16 @@
+# DevLog · Semana XX
+
+## Objetivo
+...
+
+## Avance
+...
+
+## Bloqueo
+...
+
+## Aprendizaje
+...
+
+## Siguiente
+...
